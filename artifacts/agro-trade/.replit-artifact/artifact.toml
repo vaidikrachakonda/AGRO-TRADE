@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AGRO TRADE"
+description = "A mobile-first farmer-to-consumer marketplace connecting households, shops, and hotels directly with local growers through transparent pricing, simple farmer tools, smart pricing guidance, order approvals, and collection-hub delivery tracking."
+version = "1.0.0"
+id = "artifacts/agro-trade"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23712
+
+[services.development]
+run = "pnpm --filter @workspace/agro-trade run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/agro-trade", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/agro-trade/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23712"
+BASE_PATH = "/"

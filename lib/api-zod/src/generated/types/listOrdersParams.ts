@@ -5,7 +5,9 @@
  * AGRO TRADE marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListOrdersRole } from './listOrdersRole';
 
-export interface HealthStatus {
-  status: string;
-}
+export type ListOrdersParams = {
+role?: ListOrdersRole;
+status?: string;
+};

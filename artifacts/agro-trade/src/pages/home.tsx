@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Filter, MapPin, Search, ShieldCheck, Star, X } from 'lucide-react';
+import { ArrowRight, Check, Filter, MapPin, Mic, Search, ShieldCheck, Star, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { getGetFarmerQueryKey, getListFarmerListingsQueryKey, useGetFarmer, useListFarmerListings, useListFarmers, useListListings } from '@workspace/api-client-react';
@@ -35,9 +35,37 @@ function ListingCard({ listing, onFarmer }: { listing: Listing; onFarmer: (id: n
     </article>
   );
 }
-
+function getSpeechLang() {
+  const saved = typeof window !== 'undefined' ? window.localStorage.getItem('agro-language') : null;
+  if (saved === 'hi') return 'hi-IN';
+  if (saved === 'te') return 'te-IN';
+  return 'en-IN';
+}
 export default function Home() {
   const [search, setSearch] = useState('');
+    const [isListening, setIsListening] = useState(false);
+
+  function startVoiceSearch() {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice search is not supported on this browser. Try Chrome.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = getSpeechLang();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearch(transcript);
+    };
+
+    recognition.start();
+  }
   const [filters, setFilters] = useState<ListListingsParams>({});
   const [profileId, setProfileId] = useState<number | null>(null);
   const listingsQuery = useListListings(filters);
@@ -88,7 +116,20 @@ export default function Home() {
           <p className="max-w-xs text-sm leading-6 text-muted-foreground">Small harvests, honest quantities. Listings change as the fields do.</p>
         </div>
         <form onSubmit={applyFilter} className="mt-8 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-sm)] sm:flex-row">
-          <label className="flex flex-1 items-center gap-3 rounded-xl bg-muted/60 px-4"><Search size={18} className="text-muted-foreground" /><input data-testid="input-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search a crop, farmer, or place" className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></label>
+<label className="flex flex-1 items-center gap-3 rounded-xl bg-muted/60 px-4">
+  <Search size={18} className="text-muted-foreground" />
+  <input data-testid="input-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search a crop, farmer, or place" className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+  <button
+    type="button"
+    data-testid="button-voice-search"
+    onClick={startVoiceSearch}
+    aria-label="Search by voice"
+    title="Search by voice"
+    className={`grid size-9 shrink-0 place-items-center rounded-full transition ${isListening ? 'bg-accent text-accent-foreground animate-pulse' : 'text-muted-foreground hover:text-primary'}`}
+  >
+    <Mic size={18} />
+  </button>
+</label>
           <label className="flex items-center gap-2 rounded-xl border border-transparent bg-muted/60 px-3"><Filter size={16} className="text-muted-foreground" /><select data-testid="select-crop" name="crop" className="h-12 bg-transparent pr-8 text-sm outline-none"><option value="">All crops</option><option value="tomato">Tomato</option><option value="wheat">Wheat</option><option value="rice">Rice</option><option value="onion">Onion</option></select></label>
           <label className="flex items-center gap-2 rounded-xl border border-transparent bg-muted/60 px-3"><MapPin size={16} className="text-muted-foreground" /><select data-testid="select-location" name="location" className="h-12 bg-transparent pr-8 text-sm outline-none"><option value="">Everywhere</option><option value="Keesara">Keesara</option><option value="Uppal">Uppal</option></select></label>
           <button type="submit" data-testid="button-filter" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Find harvest <ArrowRight size={16} /></button>
